@@ -47,6 +47,7 @@ import {
 	buildPrivateInfo,
 	WATCH_CONSTANTS
 } from 'viewkey-watch/private-watch';
+import { createWalletKitToolDescriptors } from '@winbit32/wallet-kit';
 
 export function asContent(obj) {
 	return { content: [{ type: 'text', text: JSON.stringify(obj) }] };
@@ -345,6 +346,53 @@ export function registerMakePaymentMcpTools(server, opts = {}) {
 	return { service };
 }
 
+/** Map a wallet-kit flat param spec ({type, description, required}) to a zod raw shape. */
+function kitParamsToZodShape(params) {
+	const shape = {};
+	for (const [key, spec] of Object.entries(params)) {
+		let schema;
+		switch (spec.type) {
+			case 'string': schema = z.string(); break;
+			case 'boolean': schema = z.boolean(); break;
+			case 'integer': schema = z.number().int(); break;
+			default: schema = z.number();
+		}
+		schema = schema.describe(spec.description);
+		shape[key] = spec.required ? schema : schema.optional();
+	}
+	return shape;
+}
+
+/**
+ * Register the @winbit32/wallet-kit view-key tool family on `server`:
+ * zec/xmr scan jobs, transparent UTXOs and raw-tx broadcast. All view-only —
+ * nothing here can move funds (broadcast requires an externally signed tx).
+ *
+ * opts:
+ *   - toolPrefix   tool-name prefix (default 'gateway')
+ *   - descriptors  inject prebuilt descriptors (tests)
+ *   - walletKit    options forwarded to createWalletKitToolDescriptors
+ *                  (per-chain { baseUrl, apiKey, client } or false to drop)
+ */
+export function registerWalletKitMcpTools(server, opts = {}) {
+	const prefix = opts.toolPrefix ?? 'gateway';
+	const descriptors = opts.descriptors ?? createWalletKitToolDescriptors(opts.walletKit ?? {});
+	for (const tool of descriptors) {
+		server.registerTool(`${prefix}_${tool.name}`, {
+			title: tool.title,
+			description: tool.description,
+			inputSchema: kitParamsToZodShape(tool.params)
+		}, async (input) => {
+			try {
+				return asContent(await tool.handler(input ?? {}));
+			} catch (err) {
+				return asContent({ error: { code: 'wallet_tool_failed', tool: tool.name, message: err?.message ?? String(err) } });
+			}
+		});
+	}
+	return { count: descriptors.length, names: descriptors.map((t) => `${prefix}_${t.name}`) };
+}
+
 /**
  * Build a standalone MCP server (the winbit32 product): the Private Watch
  * tool family + a privacy-chain `q` tool + free paywall metadata.
@@ -408,6 +456,18 @@ export function buildGatewayMcpServer(opts = {}) {
 	// MCP server instances so payment state survives between calls.
 	if (opts.makePaymentService) {
 		registerMakePaymentMcpTools(server, { service: opts.makePaymentService, toolPrefix: prefix });
+	}
+	// Wallet-kit view-key tools (scan jobs, UTXOs, broadcast). On by
+	// default — they only observe chains via the public scanner unless the
+	// host overrides base URLs. `walletKitTools: false` drops them.
+	if (opts.walletKitTools !== false) {
+		registerWalletKitMcpTools(server, {
+			toolPrefix: prefix,
+			walletKit: opts.walletKit ?? {
+				zcash: config.makePaymentScannerBase ? { baseUrl: config.makePaymentScannerBase } : {},
+				monero: {}
+			}
+		});
 	}
 	return server;
 }

@@ -66,6 +66,7 @@ winbit32 deployment.
 | Fund a watch by paying in **XMR/ZEC** to the operator's view-only wallet | ✅ |
 | Single-fact ("Penny Oracle") privacy-chain queries (height/fee/mempool) | ✅ |
 | **Make** outbound **ZEC** payments via 2-of-2 FROST co-signing (`make_payment` MCP tools) | ✅ |
+| Wallet view-key tools (`zec_scan_*`, `zec_utxos`, `zec_broadcast`, `xmr_scan_*`) via `@winbit32/wallet-kit` | ✅ |
 | Direct phrase/key signing mode; outbound USDC / XMR; utility (SecTools) tools | 🛣️ roadmap |
 
 ## Running it
