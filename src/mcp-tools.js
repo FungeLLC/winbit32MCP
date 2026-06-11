@@ -48,6 +48,13 @@ import {
 	WATCH_CONSTANTS
 } from 'viewkey-watch/private-watch';
 import { createWalletKitToolDescriptors } from '@winbit32/wallet-kit';
+import {
+	validatePhrase,
+	findChecksumWords,
+	generatePhrase,
+	splitSecretHex,
+	combineSecretShares
+} from './utility-tools.js';
 
 export function asContent(obj) {
 	return { content: [{ type: 'text', text: JSON.stringify(obj) }] };
@@ -394,6 +401,73 @@ export function registerWalletKitMcpTools(server, opts = {}) {
 }
 
 /**
+ * Register the SecTools utility family on `server`: BIP-39 phrase hygiene
+ * and Shamir secret sharing. Local + offline — nothing is stored, logged
+ * or sent anywhere — but inputs ARE secret material in flight, so the
+ * descriptions tell agents to prefer self-hosted servers for real keys.
+ *
+ * opts:
+ *   - toolPrefix  tool-name prefix (default 'gateway')
+ */
+export function registerUtilityMcpTools(server, opts = {}) {
+	const prefix = opts.toolPrefix ?? 'gateway';
+	const wrap = (fn) => async (input) => {
+		try {
+			return asContent(fn(input ?? {}));
+		} catch (err) {
+			return asContent({ error: { code: 'utility_tool_failed', message: err?.message ?? String(err) } });
+		}
+	};
+
+	server.registerTool(`${prefix}_phrase_validate`, {
+		title: 'Validate a BIP-39 seed phrase (local, FREE)',
+		description: 'Check a BIP-39 mnemonic: word membership, length and checksum. Runs locally on the server, stores nothing. For real secrets prefer a self-hosted deployment.',
+		inputSchema: {
+			phrase: z.string().min(3).describe('The space-separated mnemonic to check.')
+		}
+	}, wrap(({ phrase }) => validatePhrase(phrase)));
+
+	server.registerTool(`${prefix}_phrase_complete`, {
+		title: 'Find BIP-39 checksum words (local, FREE)',
+		description: 'Given a phrase missing its final word (11, 14, 17, 20 or 23 words), list every valid final (checksum) word. Useful for recovering a phrase with a lost last word.',
+		inputSchema: {
+			partialPhrase: z.string().min(3).describe('All words except the last, space-separated.')
+		}
+	}, wrap(({ partialPhrase }) => findChecksumWords(partialPhrase)));
+
+	server.registerTool(`${prefix}_phrase_generate`, {
+		title: 'Generate a BIP-39 seed phrase (local, FREE)',
+		description: 'Generate a fresh mnemonic with server-side CSPRNG entropy. SECURITY: whoever sees this response controls the wallet — treat the transcript as sensitive, prefer self-hosted servers, and prefer the split-wult cosign model over raw phrases where possible.',
+		inputSchema: {
+			wordCount: z.number().int().optional().describe('12, 15, 18, 21 or 24 (default 12).')
+		}
+	}, wrap(({ wordCount }) => generatePhrase(wordCount ?? 12)));
+
+	server.registerTool(`${prefix}_shamir_split`, {
+		title: 'Shamir-split a hex secret (local, FREE)',
+		description: 'Split a hex-encoded secret (key, seed, entropy) into N shares where any K reconstruct it (Shamir secret sharing, GF(256)). Shares are returned hex-encoded; distribute them to separate places.',
+		inputSchema: {
+			secretHex: z.string().min(2).describe('Even-length hex string to split.'),
+			shares: z.number().int().min(2).max(255).describe('Total number of shares to create.'),
+			threshold: z.number().int().min(2).max(255).describe('How many shares are needed to reconstruct.')
+		}
+	}, wrap(({ secretHex, shares, threshold }) => splitSecretHex(secretHex, shares, threshold)));
+
+	server.registerTool(`${prefix}_shamir_combine`, {
+		title: 'Reconstruct a Shamir-split secret (local, FREE)',
+		description: 'Combine K or more hex shares from *_shamir_split back into the original hex secret.',
+		inputSchema: {
+			shares: z.array(z.string().min(2)).min(2).describe('Hex shares (at least the threshold count).')
+		}
+	}, wrap(({ shares }) => combineSecretShares(shares)));
+
+	return {
+		names: ['phrase_validate', 'phrase_complete', 'phrase_generate', 'shamir_split', 'shamir_combine']
+			.map((n) => `${prefix}_${n}`)
+	};
+}
+
+/**
  * Build a standalone MCP server (the winbit32 product): the Private Watch
  * tool family + a privacy-chain `q` tool + free paywall metadata.
  */
@@ -468,6 +542,11 @@ export function buildGatewayMcpServer(opts = {}) {
 				monero: {}
 			}
 		});
+	}
+	// SecTools utility family (phrase hygiene, Shamir). Local + keyless;
+	// `utilityTools: false` drops them.
+	if (opts.utilityTools !== false) {
+		registerUtilityMcpTools(server, { toolPrefix: prefix });
 	}
 	return server;
 }

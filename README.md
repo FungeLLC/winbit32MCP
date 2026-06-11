@@ -67,7 +67,8 @@ winbit32 deployment.
 | Single-fact ("Penny Oracle") privacy-chain queries (height/fee/mempool) | ✅ |
 | **Make** outbound **ZEC** payments via 2-of-2 FROST co-signing (`make_payment` MCP tools) | ✅ |
 | Wallet view-key tools (`zec_scan_*`, `zec_utxos`, `zec_broadcast`, `xmr_scan_*`) via `@winbit32/wallet-kit` | ✅ |
-| Direct phrase/key signing mode; outbound USDC / XMR; utility (SecTools) tools | 🛣️ roadmap |
+| Utility (SecTools) tools: `phrase_validate` / `phrase_complete` / `phrase_generate`, `shamir_split` / `shamir_combine` — local + offline | ✅ |
+| Direct phrase/key signing mode; outbound USDC / XMR | 🛣️ roadmap |
 
 ## Running it
 
