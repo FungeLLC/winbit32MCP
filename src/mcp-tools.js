@@ -316,7 +316,7 @@ export function registerMakePaymentMcpTools(server, opts = {}) {
 
 	server.registerTool(`${prefix}_make_payment`, {
 		title: 'Make a shielded ZEC payment (human co-signature REQUIRED)',
-		description: 'Start an outbound shielded Zcash payment from the gateway\'s FROST vault. The gateway scans the vault, builds the transaction, and returns a WB32COSIGN pairing payload — display it to your human as a QR code (and as text to copy). They scan/paste it in their WINBIT32 cosigner (winbit32.com → cosign.exe) and approve by co-signing; the transaction only exists once they do. Poll *_make_payment_status until status is `completed` (txid) or `failed`. The ceremony times out after ~3 minutes per signing step, so present the QR immediately.',
+		description: 'Start an outbound shielded Zcash payment from the gateway\'s FROST vault. The gateway scans the vault, builds the transaction, and returns a WB32COSIGN pairing payload two ways: `cosignUrl` (a clickable link that opens the standalone cosigner with the session pre-loaded — best for chat) and `qrPayload` (render as a QR code for camera scanning, or paste). The human approves by co-signing in their WINBIT32 cosigner; the transaction only exists once they do. Poll *_make_payment_status until status is `completed` (txid) or `failed`. The ceremony times out after ~3 minutes per signing step, so hand over the link/QR immediately.',
 		inputSchema: {
 			toAddress: z.string().min(20).describe('Recipient Zcash unified address (u1…). Shielded Orchard only.'),
 			amountZec: z.number().positive().describe('Amount in ZEC (e.g. 0.01). Capped per payment by the operator — see *_make_payment_info.'),
@@ -328,8 +328,8 @@ export function registerMakePaymentMcpTools(server, opts = {}) {
 			return asContent({
 				...payment,
 				instructions: payment.qrPayload
-					? 'Render qrPayload as a QR code for the human to scan with their WINBIT32 cosigner (or let them paste the string). Then poll gateway_make_payment_status with this paymentId.'
-					: 'No QR yet — poll gateway_make_payment_status; the payload appears once the transaction is built.'
+					? 'Send the human cosignUrl as a clickable link (opens their cosigner with the session pre-loaded), or render qrPayload as a QR code to scan / string to paste. Then poll *_make_payment_status with this paymentId.'
+					: 'No pairing payload yet — poll *_make_payment_status; cosignUrl/qrPayload appear once the transaction is built.'
 			});
 		} catch (err) {
 			return asContent({ error: { code: 'make_payment_failed', message: err?.message ?? String(err) } });
@@ -338,7 +338,7 @@ export function registerMakePaymentMcpTools(server, opts = {}) {
 
 	server.registerTool(`${prefix}_make_payment_status`, {
 		title: 'Check an outbound payment (FREE)',
-		description: 'Poll a payment started with *_make_payment. Statuses: preparing → awaiting_cosigner (QR live) → proving → broadcasting → completed (txid) | failed. The qrPayload stays in the response while the ceremony is open.',
+		description: 'Poll a payment started with *_make_payment. Statuses: preparing → awaiting_cosigner (link/QR live) → proving → broadcasting → completed (txid) | failed. cosignUrl and qrPayload stay in the response while the ceremony is open.',
 		inputSchema: {
 			paymentId: z.string().min(36).max(36).describe('The paymentId returned by *_make_payment.')
 		}

@@ -3,7 +3,7 @@
 
 import { describe, it, expect, jest } from '@jest/globals';
 import { buildConfig } from '../src/config.js';
-import { createMakePaymentService, progressToStatus, PAYMENT_STATUSES } from '../src/make-payment.js';
+import { createMakePaymentService, progressToStatus, buildCosignDeepLink, PAYMENT_STATUSES } from '../src/make-payment.js';
 import { registerMakePaymentMcpTools } from '../src/mcp-tools.js';
 
 const U1 = 'u1' + 'q'.repeat(60);
@@ -74,6 +74,26 @@ describe('progressToStatus', () => {
 	});
 });
 
+describe('buildCosignDeepLink', () => {
+	it('URI-encodes the payload into the page hash', () => {
+		const url = buildCosignDeepLink('https://winbit32.com/cosign.html', 'WB32COSIGN:1:sess:aa');
+		expect(url).toBe('https://winbit32.com/cosign.html#WB32COSIGN%3A1%3Asess%3Aaa');
+		// Decodes back to the exact payload the cosigner's hash intake expects.
+		expect(decodeURIComponent(new URL(url).hash.slice(1))).toBe('WB32COSIGN:1:sess:aa');
+	});
+
+	it('drops any stale hash on the base URL', () => {
+		expect(buildCosignDeepLink('https://example.com/c.html#old', 'WB32COSIGN:1:s:x'))
+			.toBe('https://example.com/c.html#WB32COSIGN%3A1%3As%3Ax');
+	});
+
+	it('returns null when base or payload is missing', () => {
+		expect(buildCosignDeepLink('', 'WB32COSIGN:1:s:x')).toBeNull();
+		expect(buildCosignDeepLink('https://example.com', '')).toBeNull();
+		expect(buildCosignDeepLink('https://example.com', null)).toBeNull();
+	});
+});
+
 describe('createMakePaymentService — happy path', () => {
 	it('returns the QR immediately and completes with a txid', async () => {
 		// Hold the ceremony open so the intermediate state is observable.
@@ -83,6 +103,10 @@ describe('createMakePaymentService — happy path', () => {
 
 		expect(created.status).toBe('awaiting_cosigner');
 		expect(created.qrPayload).toMatch(/^WB32COSIGN:1:/);
+		// Clickable companion to the QR: default cosigner page + encoded payload.
+		expect(created.cosignUrl).toBe(
+			'https://winbit32.com/cosign.html#' + encodeURIComponent(created.qrPayload)
+		);
 		expect(created.paymentId).toMatch(/^[0-9a-f-]{36}$/);
 		expect(created.amountZec).toBeCloseTo(0.01);
 		expect(PAYMENT_STATUSES).toContain(created.status);

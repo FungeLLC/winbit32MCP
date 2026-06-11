@@ -158,7 +158,11 @@ export function buildConfig(env = process.env) {
 		makePaymentBirthdayHeight: asInt(env, 'MAKE_PAYMENT_BIRTHDAY_HEIGHT', 0),
 		// Operator safety rails for agent-initiated sends.
 		makePaymentMaxZec: Number.parseFloat(asString(env, 'MAKE_PAYMENT_MAX_ZEC', '0.1')),
-		makePaymentMaxPending: asInt(env, 'MAKE_PAYMENT_MAX_PENDING', 4)
+		makePaymentMaxPending: asInt(env, 'MAKE_PAYMENT_MAX_PENDING', 4),
+		// Standalone cosigner page used to build clickable deep links from
+		// qrPayload (the page consumes #WB32COSIGN:… from its URL hash).
+		// /cosign.html is the static entry, safe under any SPA fallback.
+		cosignAppUrl: asString(env, 'COSIGN_APP_URL', 'https://winbit32.com/cosign.html')
 	});
 }
 

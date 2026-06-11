@@ -43,6 +43,17 @@ export function progressToStatus(phase) {
 }
 
 /**
+ * Clickable cosigner deep link for a WB32COSIGN pairing payload. The
+ * standalone cosigner page consumes the payload from its URL hash, so an
+ * agent can hand the human a link instead of (or as well as) a QR code.
+ * Returns null when either part is missing.
+ */
+export function buildCosignDeepLink(baseUrl, qrPayload) {
+	if (!baseUrl || !qrPayload || typeof qrPayload !== 'string') return null;
+	return `${String(baseUrl).replace(/#.*$/, '')}#${encodeURIComponent(qrPayload)}`;
+}
+
+/**
  * Build the make-payment service.
  *
  * @param {object} opts
@@ -121,6 +132,7 @@ export function createMakePaymentService({ config, deps }) {
 		amountZec: p.amountZat / ZATOSHIS_PER_ZEC,
 		memo: p.memo ?? null,
 		qrPayload: p.qrPayload ?? null,
+		cosignUrl: buildCosignDeepLink(config.cosignAppUrl, p.qrPayload),
 		progress: p.progress ?? null,
 		txid: p.txid ?? null,
 		error: p.error ?? null,
@@ -183,9 +195,10 @@ export function createMakePaymentService({ config, deps }) {
 				chain: 'zcash',
 				network: config.makePaymentNetwork,
 				relayUrl: config.makePaymentRelayUrl,
+				cosignAppUrl: config.cosignAppUrl || null,
 				maxAmountZec: Number(config.makePaymentMaxZec) || null,
 				maxPending: config.makePaymentMaxPending,
-				approval: 'Every payment must be co-signed by a human scanning the WB32COSIGN QR with their WINBIT32 cosigner. The gateway share alone cannot spend.'
+				approval: 'Every payment must be co-signed by a human: send them the cosignUrl link (or show the WB32COSIGN QR) and they approve in their WINBIT32 cosigner. The gateway share alone cannot spend.'
 			};
 			try {
 				const wallet = await ensureWallet();
