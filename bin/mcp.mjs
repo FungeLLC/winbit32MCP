@@ -11,7 +11,10 @@ const makePaymentService = config.makePaymentWultPath
 	? createMakePaymentService({ config, deps: buildMakePaymentDeps(config) })
 	: null;
 
-startGatewayMcpHttpServer({ ...(makePaymentService ? { makePaymentService } : {}) })
+startGatewayMcpHttpServer({
+	toolPrefix: config.toolPrefix,
+	...(makePaymentService ? { makePaymentService } : {})
+})
 	.then(() => {
 		console.log(JSON.stringify({
 			level: 'info',

@@ -61,6 +61,9 @@ export function buildConfig(env = process.env) {
 
 		// ── Brand (configurable so any operator can adopt the gateway) ──
 		serviceName: asString(env, 'GATEWAY_SERVICE_NAME', 'Payments Gateway'),
+		// MCP tool-name prefix ('gateway' → gateway_q; winbit32 deployment
+		// sets 'winbit32'). Keep stable per deployment — agents cache names.
+		toolPrefix: asString(env, 'GATEWAY_TOOL_PREFIX', 'gateway'),
 		apiVersion: '0.1.0',
 		// HMAC header name used to sign outbound webhooks. Keep this stable
 		// per deployment — changing it breaks existing receivers. A host
