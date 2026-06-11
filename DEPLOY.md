@@ -4,6 +4,13 @@ Target shape: `mcp.winbit32.com` → nginx → the MCP server on a loopback
 port. REST/x402 is a second unit on its own port (only if you want the
 paid REST surface). Node >= 20.
 
+> **Deployed (Jun 2026):** live at `https://mcp.winbit32.com/mcp` on `fin`
+> following exactly this layout — `/opt/winbit32mcp` (service user
+> `winbit32mcp`), env at `/etc/winbit32/mcp.env`, MCP on loopback `8821`
+> (the config default), nginx vhost from this template + certbot. 21
+> `winbit32_*` tools verified over public Streamable HTTP, including a live
+> `q zec/height` against the local Zebra node.
+
 ## Install
 
 ```bash
@@ -28,53 +35,66 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=winbit32
+User=winbit32mcp
+Group=winbit32mcp
 WorkingDirectory=/opt/winbit32mcp
 EnvironmentFile=/etc/winbit32/mcp.env
-ExecStart=/usr/bin/node bin/mcp.mjs
+# Use the node >= 20 binary explicitly; distro /usr/bin/node may be ancient.
+ExecStart=/usr/local/bin/node bin/mcp.mjs
 Restart=on-failure
 RestartSec=5
 # Hardening
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/winbit32mcp
+ReadWritePaths=/var/lib/winbit32mcp
 PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-If you enable private watches (`PRIVATE_WATCH_DB`) point it somewhere
-inside a `ReadWritePaths` entry. Add equivalent units for `bin/rest.mjs`
-and the pollers if those capabilities are configured.
+Point `PRIVATE_WATCH_DB` somewhere inside a `ReadWritePaths` entry
+(`/var/lib/winbit32mcp/private-watches.db` above). Add equivalent units
+for `bin/rest.mjs` and the pollers if those capabilities are configured.
 
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now winbit32-mcp
-curl -s http://127.0.0.1:8792/health   # → ok
+curl -s http://127.0.0.1:8821/health   # → ok  (GATEWAY_MCP_PORT, default 8821)
 ```
 
 ## nginx
 
+Start with an HTTP-only vhost, symlink into `sites-enabled`, `nginx -t`,
+reload, then let certbot add TLS + the redirect:
+
 ```nginx
 server {
 	server_name mcp.winbit32.com;
-	listen 443 ssl http2;
-	# ssl_certificate … (certbot)
+	listen 80;
 
 	location / {
-		proxy_pass http://127.0.0.1:8792;
+		proxy_pass http://127.0.0.1:8821;
 		proxy_http_version 1.1;
 		# Streamable HTTP / SSE friendliness:
 		proxy_buffering off;
 		proxy_cache off;
+		proxy_request_buffering off;
 		proxy_read_timeout 300s;
+		proxy_send_timeout 300s;
 		proxy_set_header Host $host;
 		proxy_set_header X-Forwarded-Proto $scheme;
 		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 	}
 }
+```
+
+```bash
+sudo ln -sf /etc/nginx/sites-available/mcp.winbit32.com.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d mcp.winbit32.com -n --agree-tos --keep-until-expiring
 ```
 
 ## Agent configuration
