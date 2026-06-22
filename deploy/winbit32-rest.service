@@ -1,0 +1,26 @@
+[Unit]
+Description=winbit32 REST + x402 server (paid surface incl. hosted AI proxy)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=winbit32mcp
+Group=winbit32mcp
+WorkingDirectory=/opt/winbit32mcp
+EnvironmentFile=/etc/winbit32/mcp.env
+# Same node >= 20 binary the MCP unit uses; shares the proven node_modules
+# (incl. the node-23-built better-sqlite3) under /opt/winbit32mcp.
+ExecStart=/usr/local/bin/node bin/rest.mjs
+Restart=on-failure
+RestartSec=5
+# Hardening (mirrors winbit32-mcp.service)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+# The AI session DB + private-watch DB live here; must be writable.
+ReadWritePaths=/var/lib/winbit32mcp
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -128,3 +128,50 @@ curl -s -X POST https://mcp.winbit32.com/mcp \
 
 Expect 21+ tools. `…_phrase_complete` with eleven `abandon`s should return
 128 candidates including `about`.
+
+## REST + x402 surface (incl. hosted AI)
+
+The MCP unit above is free + agent-facing. The **paid** surface (x402 `q`
+facts, private-watch top-ups, and the **hosted-AI credits + OpenAI-compatible
+proxy**) lives in `bin/rest.mjs` on a second loopback port (`8820`). It shares
+the same `/opt/winbit32mcp` install — including the node-built `better-sqlite3`
+— so there is nothing extra to compile.
+
+```bash
+# Install/refresh the REST unit (overlay an updated engine if you have one):
+PG_SRC=/home/rotwang/wbdev/payments-gateway sudo -E bash scripts/deploy-rest.sh
+```
+
+That installs `deploy/winbit32-rest.service`, enables it, and smoke-tests
+`http://127.0.0.1:8820/v1/health`. Then expose it on the existing TLS host by
+adding the location blocks from `deploy/nginx-mcp-ai.location.conf` to
+`mcp.winbit32.com.conf` (above the catch-all `location /` that points at the
+MCP port):
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+curl -s https://mcp.winbit32.com/v1/ai | jq .   # { enabled, base_url, … }
+```
+
+### Hosted AI — going live
+
+The hosted-AI routes only **serve** once two pieces of config are present in
+`/etc/winbit32/mcp.env` (until then they answer `503` by design — never a mock):
+
+| Key | What it is |
+|-----|------------|
+| `X402_RECIPIENT_ADDRESS` | the Base (USDC) wallet that receives credit-bundle payments |
+| `AI_UPSTREAM_API_KEY`     | the operator's upstream LLM key (never sent to the browser) |
+| `AI_UPSTREAM_BASE_URL`    | OpenAI-compatible upstream (default `https://openrouter.ai/api/v1`) |
+| `AI_DEFAULT_MODEL`        | model used when the client asks for `auto` |
+
+```bash
+sudoedit /etc/winbit32/mcp.env      # set the four keys above (+ tune AI_* pricing)
+sudo systemctl restart winbit32-rest
+# Buyers: one x402 USDC payment at POST /v1/ai/credits → { token, baseUrl,
+# credits }; spend the token at POST /v1/ai/chat/completions.
+```
+
+The flow is **non-custodial on the buyer's side**: WINBIT32's Messenger pays the
+bundle from the user's own vault via the x402 vault payer, so we hold no card
+and no provider key for them. See `.env.example` for the full `AI_*` knob list.
