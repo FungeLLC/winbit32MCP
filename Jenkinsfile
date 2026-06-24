@@ -126,14 +126,10 @@ pipeline {
 			}
 		}
 
-		stage('Deployment Approval') {
-			when { branch 'master' }
-			steps {
-				input message: 'Staging release is ready. Deploy to LIVE (mcp.winbit32.com)? This resets /opt/winbit32mcp to the built commit as the winbit32mcp user, npm ci, and restarts winbit32-rest + winbit32-mcp.',
-				      ok: 'Deploy Live'
-			}
-		}
-
+		// Manual approval gate removed by request — master auto-deploys to live.
+		// Pre-live safety net: Install+Test (npm ci + npm test + smoke) and the
+		// Staging Check must pass first; the post-deploy Health Check reds the
+		// build if /v1/ai doesn't come back enabled=true.
 		stage('Deploy → Live') {
 			when { branch 'master' }
 			steps {
