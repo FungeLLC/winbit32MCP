@@ -5,11 +5,13 @@
 // The "from env alone" surface is: the free q/paywall oracle, the
 // private-watch + zec/xmr scan + broadcast wallet kit, the phrase + shamir
 // seed helpers, and the always-on public notice board (free reads; posting
-// needs a writable NOTICE_BOARD_DB). Two families stay HIDDEN until an
+// needs a writable NOTICE_BOARD_DB). Three families stay HIDDEN until an
 // operator explicitly opts in — asserted below as a gating guard so a future
 // regression can't silently expose them:
 //   - make_payment_*  — needs an operator .wult co-sign share (custody call)
 //   - paid_unlock_*   — needs PAID_UNLOCK_ENABLED ("paid private file" opt-in)
+//   - zec_bus_*       — needs ZEC_BUS_ENABLED (non-custodial mixing rendezvous;
+//                       requires a writable DB, no read-only fallback)
 
 import { describe, it, expect } from '@jest/globals';
 import { buildConfig, buildGatewayMcpServer } from 'payments-gateway';
@@ -61,5 +63,6 @@ describe('winbit32 deployment of payments-gateway', () => {
 		//   make_payment → a .wult co-sign share; paid_unlock → PAID_UNLOCK_ENABLED.
 		expect(names.filter((n) => n.includes('make_payment'))).toHaveLength(0);
 		expect(names.filter((n) => n.includes('paid_unlock'))).toHaveLength(0);
+		expect(names.filter((n) => n.includes('zec_bus'))).toHaveLength(0);
 	});
 });

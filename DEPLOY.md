@@ -241,3 +241,28 @@ curl -s https://mcp.winbit32.com/v1/zec/popular-amounts?side=shield | jq .
 The first run from a low `FROM_HEIGHT` can take a while; each invocation only
 advances by `ZEC_SHIELD_INDEX_MAX_BLOCKS_PER_TICK` blocks and records its
 cursor, so the timer naturally back-fills then tracks the tip.
+
+### Zcash "Bus Station" — non-custodial mixing coordination (opt-in)
+
+A rendezvous so many users leave the Zcash pool with the **same** blend-in
+amount, route and short window — their swaps then look identical on-chain (one
+anonymity set). It is **non-custodial**: the server holds no funds or keys and
+stores **no** destinations or txids — only `(route, amount, seat count,
+departure window)`. Each rider broadcasts their own swap from their own wallet.
+
+Unlike the shield index there is **no poller and no read-only fallback** — the
+tools (`zec_bus_*`) and routes (`/v1/zec/bus*`) stay hidden until you enable it
+and point it at a writable DB:
+
+```ini
+# /etc/winbit32/mcp.env
+ZEC_BUS_ENABLED=1
+ZEC_BUS_DB=/var/lib/winbit32mcp/zec-bus.db   # inside ReadWritePaths
+#ZEC_BUS_FILL_TTL_MS=86400000                # unfilled buses expire after 24h
+#ZEC_BUS_DEPART_WINDOW_MS=1200000            # 20-min broadcast window once ready
+```
+
+```bash
+# Verify (returns the open buses list once enabled):
+curl -s https://mcp.winbit32.com/v1/zec/bus | jq .
+```

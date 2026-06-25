@@ -27,7 +27,7 @@
 		"test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch"
 	},
 	"dependencies": {
-		"payments-gateway": "github:Rotwang9000/payments-gateway#e22ae6c"
+		"payments-gateway": "github:Rotwang9000/payments-gateway#408885b"
 	},
 	"devDependencies": {
 		"@jest/globals": "^30.1.2",
