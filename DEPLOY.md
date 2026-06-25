@@ -178,10 +178,11 @@ and no provider key for them. See `.env.example` for the full `AI_*` knob list.
 
 ## Zcash shield-amount index (popular "blend in" amounts)
 
-The `zec_amount_advice` / `zec_popular_amounts` tools (and the matching free
-`GET /v1/zec/amount-advice` + `/v1/zec/popular-amounts` routes) always answer:
-with no index they fall back to a static blend-in set. To turn the *"N others
-shielded this exact amount"* counts on, point the poller at the local Zebra
+The `zec_amount_advice` / `zec_split_plan` / `zec_popular_amounts` tools (and the
+matching free `GET /v1/zec/amount-advice` + `/v1/zec/split-plan` +
+`/v1/zec/popular-amounts` routes) always answer: with no index they fall back to
+a static blend-in set. To turn the *"N others shielded this exact amount"*
+counts on, point the poller at the local Zebra
 node — it reads blocks with `getblock(height, 2)` and tallies shield/deshield
 boundary crossings into a SQLite histogram. **No view keys, no wallets** — only
 public per-pool `valueBalanceZat` totals.
