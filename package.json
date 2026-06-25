@@ -14,18 +14,20 @@
 		"gateway-rest": "bin/rest.mjs",
 		"gateway-mcp": "bin/mcp.mjs",
 		"gateway-private-watch-poller": "bin/private-watch-poller.mjs",
-		"gateway-crypto-recv-poller": "bin/crypto-recv-poller.mjs"
+		"gateway-crypto-recv-poller": "bin/crypto-recv-poller.mjs",
+		"gateway-zec-shield-index-poller": "bin/zec-shield-index-poller.mjs"
 	},
 	"scripts": {
 		"start:rest": "node bin/rest.mjs",
 		"start:mcp": "node bin/mcp.mjs",
 		"poll:watches": "node bin/private-watch-poller.mjs",
 		"poll:crypto-recv": "node bin/crypto-recv-poller.mjs",
+		"poll:zec-shield-index": "node bin/zec-shield-index-poller.mjs",
 		"test": "node --experimental-vm-modules node_modules/.bin/jest",
 		"test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch"
 	},
 	"dependencies": {
-		"payments-gateway": "github:Rotwang9000/payments-gateway#1eadbbc"
+		"payments-gateway": "github:Rotwang9000/payments-gateway#99a9e0c"
 	},
 	"devDependencies": {
 		"@jest/globals": "^30.1.2",

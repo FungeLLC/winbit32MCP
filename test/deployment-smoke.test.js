@@ -25,7 +25,10 @@ const WINBIT32_ENV = {
 
 // Expected always-on surface size. Bump deliberately (with a representative
 // below) whenever the engine adds a family — it's a canary, not a guess.
-const EXPECTED_TOOL_COUNT = 26;
+// 28 = 26 + the free Zcash amount-privacy advisor (zec_amount_advice +
+// zec_popular_amounts), which register by default and fall back to a curated
+// blend-in list until the operator runs the shield-amount index poller.
+const EXPECTED_TOOL_COUNT = 28;
 
 describe('winbit32 deployment of payments-gateway', () => {
 	it('registers the expected winbit32_* surface from env alone', () => {
@@ -46,7 +49,8 @@ describe('winbit32 deployment of payments-gateway', () => {
 			'winbit32_xmr_scan_start',
 			'winbit32_phrase_validate',
 			'winbit32_shamir_split',
-			'winbit32_board_list'
+			'winbit32_board_list',
+			'winbit32_zec_amount_advice'
 		]) {
 			expect(names).toContain(expected);
 		}

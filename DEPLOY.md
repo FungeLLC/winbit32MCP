@@ -175,3 +175,68 @@ sudo systemctl restart winbit32-rest
 The flow is **non-custodial on the buyer's side**: WINBIT32's Messenger pays the
 bundle from the user's own vault via the x402 vault payer, so we hold no card
 and no provider key for them. See `.env.example` for the full `AI_*` knob list.
+
+## Zcash shield-amount index (popular "blend in" amounts)
+
+The `zec_amount_advice` / `zec_popular_amounts` tools (and the matching free
+`GET /v1/zec/amount-advice` + `/v1/zec/popular-amounts` routes) always answer:
+with no index they fall back to a static blend-in set. To turn the *"N others
+shielded this exact amount"* counts on, point the poller at the local Zebra
+node — it reads blocks with `getblock(height, 2)` and tallies shield/deshield
+boundary crossings into a SQLite histogram. **No view keys, no wallets** — only
+public per-pool `valueBalanceZat` totals.
+
+Set the `ZEC_SHIELD_INDEX_*` keys in `/etc/winbit32/mcp.env` (see
+`.env.example`), making sure `ZEC_SHIELD_INDEX_DB` sits inside a
+`ReadWritePaths` entry, then add a poller **timer** (cron-style; the binary
+scans one bounded batch per run and exits):
+
+`/etc/systemd/system/winbit32-zec-shield-index.service`:
+
+```ini
+[Unit]
+Description=winbit32 Zcash shield-amount index poller
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=winbit32mcp
+Group=winbit32mcp
+WorkingDirectory=/opt/winbit32mcp
+EnvironmentFile=/etc/winbit32/mcp.env
+ExecStart=/usr/local/bin/node bin/zec-shield-index-poller.mjs
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/winbit32mcp
+PrivateTmp=true
+```
+
+`/etc/systemd/system/winbit32-zec-shield-index.timer`:
+
+```ini
+[Unit]
+Description=Run the winbit32 Zcash shield-amount index poller periodically
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now winbit32-zec-shield-index.timer
+# One-shot catch-up / smoke test (logs JSON: scanned range, tallied, cursor):
+sudo -u winbit32mcp --preserve-env \
+	/usr/local/bin/node /opt/winbit32mcp/bin/zec-shield-index-poller.mjs
+curl -s https://mcp.winbit32.com/v1/zec/popular-amounts?side=shield | jq .
+```
+
+The first run from a low `FROM_HEIGHT` can take a while; each invocation only
+advances by `ZEC_SHIELD_INDEX_MAX_BLOCKS_PER_TICK` blocks and records its
+cursor, so the timer naturally back-fills then tracks the tip.
