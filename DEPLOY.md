@@ -260,7 +260,19 @@ ZEC_BUS_ENABLED=1
 ZEC_BUS_DB=/var/lib/winbit32mcp/zec-bus.db   # inside ReadWritePaths
 #ZEC_BUS_FILL_TTL_MS=86400000                # unfilled buses expire after 24h
 #ZEC_BUS_DEPART_WINDOW_MS=1200000            # 20-min broadcast window once ready
+#ZEC_BUS_SYBIL_REQUIRED=0                     # P4c: require a zk membership proof per seat (OFF; one identity → one seat)
+#ZEC_BUS_VERIFICATION_KEY=/var/lib/winbit32mcp/zec-bus-vkey.json  # trusted-setup verifying key; required when SYBIL_REQUIRED=1
 ```
+
+**Anti-sybil (P4c, opt-in).** Leaving `ZEC_BUS_SYBIL_REQUIRED` off keeps the board
+open and anonymous (the default public good). Turning it on makes every seat
+claim require an anonymous zk membership proof — one identity → one seat per bus —
+over the REST `POST /v1/zec/bus/open` → `POST /v1/zec/bus/join {busId, proof}` flow
+(the MCP `zec_bus_join` tool then returns `sybil_required` and points at it). It
+needs a real trusted-setup ceremony verifying key at `ZEC_BUS_VERIFICATION_KEY`
+(see the [`zecbus`](https://github.com/Rotwang9000/zecbus) repo's ceremony). Enabling
+it **without** a key fails safe — seats are refused (`sybil_misconfigured`), never
+silently opened.
 
 ```bash
 # Verify (returns the open buses list once enabled):
