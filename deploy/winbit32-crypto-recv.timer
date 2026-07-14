@@ -1,0 +1,12 @@
+[Unit]
+Description=Run winbit32 crypto-recv poller every minute
+Requires=winbit32-crypto-recv.service
+
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Unit=winbit32-crypto-recv.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,22 @@
+# winbit32 crypto-recv poller — scans OUR ZEC (and optional XMR) receive
+# wallets via NFPT, settles memo top-up quotes, and runs the donation-overlay
+# / Ziving tick. Requires ZEC_RECV_ADDRESS + ZEC_RECV_UFVK in mcp.env.
+
+[Unit]
+Description=winbit32 crypto receive poller (ZEC/XMR top-ups + overlay/Ziving)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=winbit32mcp
+Group=winbit32mcp
+WorkingDirectory=/opt/winbit32mcp
+EnvironmentFile=/etc/winbit32/mcp.env
+ExecStart=/usr/local/bin/node bin/crypto-recv-poller.mjs
+# Watch DB + top-up quotes live here
+ReadWritePaths=/var/lib/winbit32mcp
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
