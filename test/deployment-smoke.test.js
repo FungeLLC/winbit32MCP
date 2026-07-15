@@ -31,7 +31,10 @@ const WINBIT32_ENV = {
 // zec_popular_amounts + zec_split_plan), which register by default and fall back
 // to a curated blend-in list until the operator runs the shield-amount index
 // poller.
-const EXPECTED_TOOL_COUNT = 29;
+// 36 = 29 + the ziving campaign-page family (info, get_page, featured,
+// create_page, feature, topup, cancel), always-on since ziving.org launched
+// on this gateway.
+const EXPECTED_TOOL_COUNT = 36;
 
 describe('winbit32 deployment of payments-gateway', () => {
 	it('registers the expected winbit32_* surface from env alone', () => {
@@ -54,7 +57,9 @@ describe('winbit32 deployment of payments-gateway', () => {
 			'winbit32_shamir_split',
 			'winbit32_board_list',
 			'winbit32_zec_amount_advice',
-			'winbit32_zec_split_plan'
+			'winbit32_zec_split_plan',
+			'winbit32_ziving_info',
+			'winbit32_ziving_create_page'
 		]) {
 			expect(names).toContain(expected);
 		}
