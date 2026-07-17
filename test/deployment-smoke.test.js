@@ -31,10 +31,11 @@ const WINBIT32_ENV = {
 // zec_popular_amounts + zec_split_plan), which register by default and fall back
 // to a curated blend-in list until the operator runs the shield-amount index
 // poller.
-// 36 = 29 + the ziving campaign-page family (info, get_page, featured,
-// create_page, feature, topup, cancel), always-on since ziving.org launched
-// on this gateway.
-const EXPECTED_TOOL_COUNT = 36;
+// 37 = 29 + the ziving campaign-page family (info, get_page, featured,
+// create_page, feature, topup, cancel, recover), always-on since ziving.org
+// launched on this gateway. The old 36 was an artefact of a stale
+// package-lock that shipped a pre-recover engine while the pin said newer.
+const EXPECTED_TOOL_COUNT = 37;
 
 describe('winbit32 deployment of payments-gateway', () => {
 	it('registers the expected winbit32_* surface from env alone', () => {
