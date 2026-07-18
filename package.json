@@ -28,7 +28,7 @@
 	},
 	"dependencies": {
 		"payments-gateway": "github:Rotwang9000/payments-gateway#d099472",
-		"viewkey-watch": "github:Rotwang9000/viewkey-watch#de45ef3"
+		"viewkey-watch": "github:Rotwang9000/viewkey-watch#cf7daa8"
 	},
 	"devDependencies": {
 		"@jest/globals": "^30.1.2",
