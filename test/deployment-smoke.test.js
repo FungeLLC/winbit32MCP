@@ -35,7 +35,11 @@ const WINBIT32_ENV = {
 // create_page, feature, topup, cancel, recover), always-on since ziving.org
 // launched on this gateway. The old 36 was an artefact of a stale
 // package-lock that shipped a pre-recover engine while the pin said newer.
-const EXPECTED_TOOL_COUNT = 37;
+// 38 = 37 + entropy_selftest, which runs the RNG health check guarding
+// phrase_generate. Not a family — one tool — but an agent that mints a
+// phrase should be able to ask whether the generator was working, which
+// is exactly what nine Coldcard Mk3 releases had no way to answer.
+const EXPECTED_TOOL_COUNT = 38;
 
 describe('winbit32 deployment of payments-gateway', () => {
 	it('registers the expected winbit32_* surface from env alone', () => {
@@ -56,6 +60,7 @@ describe('winbit32 deployment of payments-gateway', () => {
 			'winbit32_xmr_scan_start',
 			'winbit32_phrase_validate',
 			'winbit32_shamir_split',
+			'winbit32_entropy_selftest',
 			'winbit32_board_list',
 			'winbit32_zec_amount_advice',
 			'winbit32_zec_split_plan',
