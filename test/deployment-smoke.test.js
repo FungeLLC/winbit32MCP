@@ -39,7 +39,10 @@ const WINBIT32_ENV = {
 // phrase_generate. Not a family — one tool — but an agent that mints a
 // phrase should be able to ask whether the generator was working, which
 // is exactly what nine Coldcard Mk3 releases had no way to answer.
-const EXPECTED_TOOL_COUNT = 38;
+// 40 = 38 + NFPT marketplace reads (nfpt_list_collections + nfpt_listings).
+// Buy (nfpt_buy / nfpt_buy_status) stays gated on MAKE_PAYMENT_WULT_PATH,
+// same as make_payment itself.
+const EXPECTED_TOOL_COUNT = 40;
 
 describe('winbit32 deployment of payments-gateway', () => {
 	it('registers the expected winbit32_* surface from env alone', () => {
@@ -65,7 +68,8 @@ describe('winbit32 deployment of payments-gateway', () => {
 			'winbit32_zec_amount_advice',
 			'winbit32_zec_split_plan',
 			'winbit32_ziving_info',
-			'winbit32_ziving_create_page'
+			'winbit32_ziving_create_page',
+			'winbit32_nfpt_list_collections'
 		]) {
 			expect(names).toContain(expected);
 		}
@@ -75,5 +79,6 @@ describe('winbit32 deployment of payments-gateway', () => {
 		expect(names.filter((n) => n.includes('make_payment'))).toHaveLength(0);
 		expect(names.filter((n) => n.includes('paid_unlock'))).toHaveLength(0);
 		expect(names.filter((n) => n.includes('zec_bus'))).toHaveLength(0);
+		expect(names.filter((n) => n.includes('nfpt_buy'))).toHaveLength(0);
 	});
 });

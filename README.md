@@ -18,13 +18,16 @@ certbot). Engine code, features and tests live upstream; bump the pinned
 
 ## What agents get
 
-21 `winbit32_*` tools today: Penny Oracle single-fact queries (`q`),
+40 `winbit32_*` tools today: Penny Oracle single-fact queries (`q`),
 Zcash/Monero view-key scan jobs, UTXOs + broadcast, private balance
 watches with webhooks and XMR/ZEC/USDC top-ups, x402 paywall metadata,
-and the offline phrase/Shamir utilities. The `make_payment` family
-(outbound co-signed ZEC with `cosignUrl` deep links) appears once the
-operator stages a FROST `.wult` share — the gateway share alone can never
-spend; a human approves every payment in their cosigner.
+and the offline phrase/Shamir utilities. NFPT marketplace reads
+(`nfpt_list_collections` / `nfpt_listings`) land when the
+payments-gateway pin is at **v0.19.0+**. The `make_payment` family
+(outbound co-signed ZEC with `cosignUrl` deep links) — and the matching
+`nfpt_buy` / `nfpt_buy_status` — appear once the operator stages a FROST
+`.wult` share: the gateway share alone can never spend; a human approves
+every payment in their cosigner.
 
 ## Key custody
 
